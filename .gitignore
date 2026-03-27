@@ -1,0 +1,53 @@
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual environments ─────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# ── Environment / Secrets ────────────────────────────────
+.env
+.env.*
+*.key
+secrets.json
+
+# ── Database files ───────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Logs / Cache ─────────────────────────────────────────
+*.log
+*.log.*
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── IDE / Editor ─────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.user
+*.swp
+*~
+
+# ── OS files ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Node (if added later) ────────────────────────────────
+node_modules/
+npm-debug.log*
