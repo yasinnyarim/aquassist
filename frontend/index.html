@@ -9,27 +9,86 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
     <div class="app-wrapper">
-        <aside class="sidebar">
-            <div class="brand">
-                <i class="fas fa-water"></i> AquAssist
+        <header class="site-header">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <div class="brand">
+                        <i class="fas fa-water"></i> AquAssist
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <a href="#" class="utility-link">Müşteri Hizmetleri</a>
+                    <a href="#" class="utility-link">Mağaza bul</a>
+                    <button type="button" class="icon-btn" aria-label="Ara"><i class="fas fa-search"></i></button>
+                    <button type="button" class="icon-btn" aria-label="Hesap"><i class="fas fa-user"></i></button>
+                    <button type="button" class="icon-btn" aria-label="Favoriler"><i class="fas fa-heart"></i></button>
+                    <button type="button" class="icon-btn" aria-label="Sepet"><i class="fas fa-shopping-bag"></i></button>
+                </div>
             </div>
-            <nav class="sidebar-nav">
-                <button class="nav-btn" data-view="aquariums"><i class="fas fa-layer-group"></i> My Aquariums</button>
-                <button class="nav-btn" data-view="dashboard" id="nav-dashboard"><i class="fas fa-chart-pie"></i> Dashboard</button>
-                <button class="nav-btn" data-view="fish" id="nav-fish"><i class="fas fa-fish"></i> Fish Species</button>
-                <button class="nav-btn" data-view="plants" id="nav-plants"><i class="fas fa-seedling"></i> Plant Care</button>
-                <button class="nav-btn" data-view="water-analysis" id="nav-water"><i class="fas fa-chart-line"></i> Water Analysis</button>
-                <button class="nav-btn" data-view="ai-report" id="nav-report"><i class="fas fa-robot"></i> AI Report</button>
+            <nav class="category-strip" aria-label="Ana kategoriler">
+                <div class="category-strip-inner">
+                    <button type="button" class="cat-link" data-view="aquariums">Akvaryumlar</button>
+                    <button type="button" class="cat-link" data-view="dashboard">Kontrol paneli</button>
+                    <button type="button" class="cat-link" data-view="water-analysis">Su analizi</button>
+                    <button type="button" class="cat-link" data-view="fish">Balıklar</button>
+                    <button type="button" class="cat-link" data-view="plants">Bitkiler</button>
+                    <button type="button" class="cat-link" data-view="ai-report">AI rapor</button>
+                </div>
             </nav>
-        </aside>
+        </header>
 
         <main class="main-content">
             <!-- AQUARIUMS LIST VIEW -->
             <div id="view-aquariums" class="view">
+                <section class="video-hero">
+                    <div class="video-hero-inner">
+                        <div class="video-hero-copy">
+                            <span class="eyebrow">AquAssist Premiere</span>
+                            <h1>Watch your aquarium care come alive.</h1>
+                            <p>Experience a bold video-led landing page that feels more like a lifestyle brand showcase.</p>
+                            <div class="hero-actions">
+                                <button class="btn btn-primary" id="btn-hero-create"><i class="fas fa-plus"></i> Create Aquarium</button>
+                                <button class="btn btn-secondary btn-outlined" id="btn-hero-explore">Browse Tanks</button>
+                            </div>
+                        </div>
+                        <div class="video-hero-frame">
+                            <iframe
+                                src="https://www.youtube.com/embed/5YSDoa5L3GI?autoplay=1&mute=1&controls=0&rel=0&showinfo=0&loop=1&playlist=5YSDoa5L3GI"
+                                title="AquAssist Hero Video"
+                                frameborder="0"
+                                allow="autoplay; encrypted-media"
+                                allowfullscreen>
+                            </iframe>
+                            <div class="video-overlay">
+                                <button class="btn btn-primary video-play"><i class="fas fa-play"></i> İzle</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section class="homepage-tiles">
+                    <div class="tile tile-feature">
+                        <span class="eyebrow">Collections</span>
+                        <h2>Swatch-style tank collections</h2>
+                        <p>Discover color-driven aquarium sets, performance tracking and care guides with premium visuals.</p>
+                        <button class="btn btn-primary">Explore now</button>
+                    </div>
+                    <div class="tile tile-small">
+                        <h3>Balık Koleksiyonu</h3>
+                        <p>Choose your species with precise size control.</p>
+                    </div>
+                    <div class="tile tile-small">
+                        <h3>Bitki Bakımı</h3>
+                        <p>Match the right plants to your aquarium style.</p>
+                    </div>
+                    <div class="tile tile-small">
+                        <h3>AI Rapor</h3>
+                        <p>Get instant diagnosis and smarter maintenance advice.</p>
+                    </div>
+                </section>
                 <div class="header-row">
                     <h1 class="view-title">Aquarium manager</h1>
                     <button class="btn btn-primary" id="btn-show-create"><i class="fas fa-plus"></i> New Aquarium</button>
@@ -358,6 +417,6 @@
 
 
     </div>
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=6"></script>
 </body>
 </html>

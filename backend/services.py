@@ -1,4 +1,7 @@
 import os
+
+import httpx
+
 try:
     from openai import OpenAI
     api_key = os.getenv("OPENAI_API_KEY")
@@ -198,38 +201,126 @@ def diagnose_problem(description: str):
     except Exception as e:
         return f"LLM integration failed: {str(e)}"
 
-def get_ai_chat_response(message: str, context: dict):
-    if not client:
-        # Fun fallback logic for the demo
-        msg = message.lower()
-        if "selam" in msg or "merhaba" in msg:
-            return f"Merhaba! {context['tank_name']} akvaryumunuz için size nasıl yardımcı olabilirim?"
-        if "balık" in msg or "fish" in msg:
-            return f"Akvaryumunuzda şu an {len(context['fishes'])} farklı tür balık var. Genel durumları iyi görünüyor."
-        if "bitki" in msg or "plant" in msg:
-            return f"{context['tank_name']} tankınızda {len(context['plants'])} tür bitki bulunuyor. Bitkiler su kalitesini artırmaya yardımcı olur."
-        if "durum" in msg or "status" in msg:
-            return f"Akvaryumunuzun hacmi {context['volume']} litre. Sıcaklık {context['temp']}°C. Her şey yolunda görünüyor!"
-        return "Bu konuda size yardımcı olabilirim. Akvaryumunuzun sağlığı için su değişimlerini ihmal etmeyin."
+def _build_chat_system_prompt(context: dict) -> str:
+    """Rich tank context for Ollama / OpenAI (Turkish UI)."""
+    tank = context.get("tank_name", "Akvaryum")
+    vol = context.get("volume", "?")
+    temp = context.get("temp")
+    temp_s = f"{temp}°C" if temp is not None else "Belirtilmedi"
+    has_f = "Evet" if context.get("has_filter", True) else "Hayır (kritik)"
+    planted = "Evet" if context.get("is_planted") else "Hayır"
+    bio = context.get("bioload_percent")
+    score = context.get("health_score")
+    status = context.get("health_status", "")
+    bio_s = f"%{bio}" if bio is not None else "—"
+    score_s = f"{score}/100" if score is not None else "—"
+    fishes = context.get("fishes") or []
+    plants = context.get("plants") or []
+    issues = context.get("compatibility_issues") or []
 
-    prompt = f"""
-    Sen AquAssist adlı akıllı akvaryum asistanısın. Kullanıcının akvaryumu hakkında konuşuyorsun.
-    Akvaryum Bilgileri:
-    İsim: {context['tank_name']}
-    Hacim: {context['volume']} L
-    Sıcaklık: {context['temp']}°C
-    Balıklar: {', '.join([f"{f['qty']}x {f['name']}" for f in context['fishes']])}
-    Bitkiler: {', '.join([f"{p['qty']}x {p['name']}" for p in context['plants']])}
-    
-    Kullanıcı: "{message}"
-    Cevabı kısa, cana yakın ve uzman bir dille ver. Türkçe konuş.
-    """
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=200
-        )
-        return response.choices[0].message.content
-    except:
-        return f"{context['tank_name']} hakkında sorularınızı yanıtlamak için buradayım. Şu an {context['volume']} litrelik tankınızda her şey dengeli görünüyor."
+    fish_lines = "\n".join(
+        f"- {f['qty']} adet {f['name']}"
+        + (f" (kategori: {f['category']})" if f.get("category") else "")
+        for f in fishes
+    ) or "- Henüz balık yok"
+    plant_lines = "\n".join(f"- {p['qty']} adet {p['name']}" for p in plants) or "- Henüz bitki yok"
+    issue_lines = "\n".join(f"- {i}" for i in issues) if issues else "- Uyumluluk uyarısı yok"
+
+    return f"""Sen AquAssist adlı akvaryum asistanısın. Kullanıcı şu an yalnızca "{tank}" adlı akvaryumu seçmiş durumda; tüm soruları bu tankın verilerine göre yanıtla. Genel bilgi verirken bile bu tanka özel öneride bulun.
+
+Seçili akvaryum verileri:
+- Ad: {tank}
+- Hacim: {vol} L
+- Sıcaklık: {temp_s}
+- Filtre: {has_f}
+- Bitkili düzen: {planted}
+- Tahmini biyolojik yük (doluluk): {bio_s}
+- Sağlık skoru (uygulama hesabı): {score_s} (durum: {status})
+
+Balıklar:
+{fish_lines}
+
+Bitkiler:
+{plant_lines}
+
+Uyumluluk / risk notları:
+{issue_lines}
+
+Kurallar: Türkçe yanıt ver. Kısa ve net ol; gerekirse madde madde yaz. Tıbbi teşhis yerine akvaryum bakımı perspektifinden konuş; ciddi balık hastalığı şüphesinde veteriner öner."""
+
+
+def _ollama_chat(system: str, user_message: str) -> str:
+    base = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+    model = os.getenv("OLLAMA_MODEL", "llama3.2")
+    url = f"{base}/api/chat"
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_message},
+        ],
+        "stream": False,
+        "options": {"temperature": 0.65},
+    }
+    timeout = httpx.Timeout(120.0, connect=8.0)
+    with httpx.Client(timeout=timeout) as hc:
+        r = hc.post(url, json=payload)
+        r.raise_for_status()
+        body = r.json()
+    msg = body.get("message") or {}
+    content = (msg.get("content") or "").strip()
+    if not content:
+        raise RuntimeError("Ollama boş yanıt döndü")
+    return content
+
+
+def _keyword_fallback_chat(message: str, context: dict) -> str:
+    msg = message.lower()
+    name = context.get("tank_name", "Akvaryum")
+    if "selam" in msg or "merhaba" in msg:
+        return f"Merhaba! {name} için size nasıl yardımcı olabilirim? (Not: Yerel Ollama veya OpenAI kapalı — tam yanıt için Ollama'yı başlatın.)"
+    if "balık" in msg or "fish" in msg:
+        n = len(context.get("fishes") or [])
+        return f"{name} tankında şu an {n} tür balık kayıtlı."
+    if "bitki" in msg or "plant" in msg:
+        n = len(context.get("plants") or [])
+        return f"{name} içinde {n} tür bitki kayıtlı."
+    if "durum" in msg or "status" in msg:
+        return f"{name}: {context.get('volume')} L, sıcaklık {context.get('temp')}°C. Tam analiz için Ollama bağlantısı gerekir."
+    return "Yapay zeka şu an kullanılamıyor. Ollama'yı çalıştırıp tekrar deneyin."
+
+
+def get_ai_chat_response(message: str, context: dict) -> str:
+    system = _build_chat_system_prompt(context)
+    use_ollama = os.getenv("OLLAMA_CHAT", "1").lower() not in ("0", "false", "no")
+
+    if use_ollama:
+        try:
+            return _ollama_chat(system, message)
+        except Exception as e:
+            print(f"Ollama chat failed: {e}")
+            if not client:
+                model = os.getenv("OLLAMA_MODEL", "llama3.2")
+                return (
+                    "Ollama ile bağlantı kurulamadı. Bilgisayarınızda Ollama'nın çalıştığından emin olun "
+                    f"(genelde `http://127.0.0.1:11434`). Model için: `ollama pull {model}`\n\n"
+                    f"Detay: {str(e)}"
+                )
+
+    if client:
+        try:
+            response = client.chat.completions.create(
+                model=os.getenv("OPENAI_CHAT_MODEL", "gpt-3.5-turbo"),
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": message},
+                ],
+                max_tokens=500,
+            )
+            out = (response.choices[0].message.content or "").strip()
+            if out:
+                return out
+        except Exception as e:
+            print(f"OpenAI chat failed: {e}")
+
+    return _keyword_fallback_chat(message, context)

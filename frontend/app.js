@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * showView(name) — the ONLY function that switches views.
  * name must match the suffix of the view DIV id: "view-{name}"
- * and the data-view attribute of the sidebar button.
+ * and the data-view attribute on header .cat-link buttons.
  */
 function showView(name) {
     // 1. Hide all view panels
@@ -115,7 +115,7 @@ function showView(name) {
     }
 
     // 3. Highlight sidebar button
-    document.querySelectorAll('.nav-btn').forEach(btn => {
+    document.querySelectorAll('.cat-link[data-view]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.view === name);
     });
 
@@ -133,7 +133,7 @@ function showView(name) {
 //  SIDEBAR WIRING
 // ══════════════════════════════════════════════════════════════
 function wireSidebar() {
-    document.querySelectorAll('.nav-btn').forEach(btn => {
+    document.querySelectorAll('.cat-link[data-view]').forEach(btn => {
         // Remove the `disabled` attribute — we handle "no tank" via empty states instead
         btn.removeAttribute('disabled');
 
@@ -169,6 +169,10 @@ function wireModals() {
     // Create Tank
     document.getElementById('btn-show-create')
         .addEventListener('click', () => showModal('create-modal'));
+    document.getElementById('btn-hero-create')
+        .addEventListener('click', () => showModal('create-modal'));
+    document.getElementById('btn-hero-explore')
+        .addEventListener('click', () => document.getElementById('aquariums-grid')?.scrollIntoView({ behavior: 'smooth' }));
     document.getElementById('btn-close-create')
         .addEventListener('click', () => hideModal('create-modal'));
     document.getElementById('form-create-tank')
@@ -804,22 +808,47 @@ async function handleDeleteTankConfirmed() {
 
 async function handleChatSend() {
     const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('chat-send-btn');
     const msg = input.value.trim();
     if (!msg || !STATE.selectedTank) return;
-    
+
     const body = document.getElementById('chat-body');
     body.innerHTML += `<div style="text-align:right; margin:10px 0;"><span style="background:#1a73e8; color:white; padding:8px 12px; border-radius:12px; display:inline-block">${escHtml(msg)}</span></div>`;
     input.value = '';
-    
+    body.innerHTML += `<div id="chat-loading" style="text-align:left; margin:10px 0;"><span style="background:#e2e8f0; color:#64748b; padding:8px 12px; border-radius:12px; display:inline-block"><i class="fas fa-circle-notch fa-spin"></i> Düşünüyor…</span></div>`;
+    body.scrollTop = body.scrollHeight;
+    sendBtn.disabled = true;
+    input.disabled = true;
+
     try {
         const res = await fetch(`${API}/tanks/${STATE.selectedTank.id}/chat`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: msg })
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg }),
         });
-        const data = await res.json();
-        body.innerHTML += `<div style="text-align:left; margin:10px 0;"><span style="background:#e2e8f0; color:#1e293b; padding:8px 12px; border-radius:12px; display:inline-block">${escHtml(data.response)}</span></div>`;
+        document.getElementById('chat-loading')?.remove();
+        if (!res.ok) {
+            let detail = `HTTP ${res.status}`;
+            try {
+                const err = await res.json();
+                detail = err.detail || err.message || detail;
+            } catch (_) { /* ignore */ }
+            body.innerHTML += `<div style="text-align:left; margin:10px 0;"><span style="background:#fee2e2; color:#991b1b; padding:8px 12px; border-radius:12px; display:inline-block; font-size:13px">${escHtml(String(detail))}</span></div>`;
+        } else {
+            const data = await res.json();
+            const reply = data.response != null ? String(data.response) : '';
+            body.innerHTML += `<div style="text-align:left; margin:10px 0;"><span style="background:#e2e8f0; color:#1e293b; padding:8px 12px; border-radius:12px; display:inline-block; white-space:pre-wrap">${escHtml(reply)}</span></div>`;
+        }
         body.scrollTop = body.scrollHeight;
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        document.getElementById('chat-loading')?.remove();
+        body.innerHTML += `<div style="text-align:left; margin:10px 0;"><span style="background:#fee2e2; color:#991b1b; padding:8px 12px; border-radius:12px; display:inline-block; font-size:13px">Bağlantı hatası: ${escHtml(e.message || String(e))}</span></div>`;
+        body.scrollTop = body.scrollHeight;
+    } finally {
+        sendBtn.disabled = false;
+        input.disabled = false;
+        input.focus();
+    }
 }
 
 // ══════════════════════════════════════════════════════════════

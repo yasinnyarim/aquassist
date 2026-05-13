@@ -225,14 +225,34 @@ def chat_with_assistant(tank_id: int, req: schemas.ChatRequest, db: Session = De
     
     fishes = db.query(models.TankFish).filter(models.TankFish.tank_id == tank_id).all()
     plants = db.query(models.TankPlant).filter(models.TankPlant.tank_id == tank_id).all()
-    
+
+    total_bioload, bioload_percent = services.calculate_bioload(tank, fishes, plants)
+    issues = services.calculate_compatibility(tank, fishes)
+    health_score, health_status = services.calculate_health_score(
+        bioload_percent, issues, tank.has_filter
+    )
+
     context = {
         "tank_name": tank.name,
         "volume": tank.size_liters,
         "temp": tank.temperature,
-        "fishes": [{"name": f.species.name, "qty": f.quantity} for f in fishes if f.species],
-        "plants": [{"name": p.plant.name, "qty": p.quantity} for p in plants if p.plant]
+        "has_filter": tank.has_filter,
+        "is_planted": tank.is_planted,
+        "bioload_percent": round(bioload_percent, 1),
+        "health_score": round(health_score, 1),
+        "health_status": health_status,
+        "compatibility_issues": issues,
+        "fishes": [
+            {
+                "name": f.species.name,
+                "qty": f.quantity,
+                "category": (f.species.category or "").strip(),
+            }
+            for f in fishes
+            if f.species
+        ],
+        "plants": [{"name": p.plant.name, "qty": p.quantity} for p in plants if p.plant],
     }
-    
+
     response = services.get_ai_chat_response(req.message, context)
     return {"response": response}
