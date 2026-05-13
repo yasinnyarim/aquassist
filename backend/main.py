@@ -58,9 +58,16 @@ def add_fish(tank_id: int, tf: schemas.TankFishCreate, db: Session = Depends(get
     
     if existing:
         existing.quantity += tf.quantity
+        if tf.size_cm is not None:
+            existing.size_cm = tf.size_cm
         db_tf = existing
     else:
-        db_tf = models.TankFish(tank_id=tank_id, species_id=tf.species_id, quantity=tf.quantity)
+        db_tf = models.TankFish(
+            tank_id=tank_id,
+            species_id=tf.species_id,
+            quantity=tf.quantity,
+            size_cm=tf.size_cm,
+        )
         db.add(db_tf)
         
     db.commit()
@@ -151,3 +158,81 @@ def simulate_changes(tank_id: int, new_fishes: List[schemas.TankFishCreate], db:
 @app.post("/diagnose")
 def diagnose_problem(req: schemas.ProblemDiagnosisRequest):
     return {"diagnosis": services.diagnose_problem(req.description)}
+
+@app.post("/fish-species/", response_model=schemas.FishSpeciesResponse)
+def create_species(species: schemas.FishSpeciesCreate, db: Session = Depends(get_db)):
+    db_species = models.FishSpecies(**species.model_dump())
+    db.add(db_species)
+    db.commit()
+    db.refresh(db_species)
+    return db_species
+
+@app.get("/plant-species/", response_model=List[schemas.PlantSpeciesResponse])
+def get_plant_species(db: Session = Depends(get_db)):
+    return db.query(models.PlantSpecies).all()
+
+@app.post("/plant-species/", response_model=schemas.PlantSpeciesResponse)
+def create_plant_species(plant: schemas.PlantSpeciesBase, db: Session = Depends(get_db)):
+    db_plant = models.PlantSpecies(**plant.model_dump())
+    db.add(db_plant)
+    db.commit()
+    db.refresh(db_plant)
+    return db_plant
+
+@app.get("/tanks/{tank_id}/plants", response_model=List[schemas.TankPlantResponse])
+def get_tank_plants(tank_id: int, db: Session = Depends(get_db)):
+    return db.query(models.TankPlant).filter(models.TankPlant.tank_id == tank_id).all()
+
+@app.post("/tanks/{tank_id}/plants", response_model=schemas.TankPlantResponse)
+def add_tank_plant(tank_id: int, tp: schemas.TankPlantCreate, db: Session = Depends(get_db)):
+    tank = db.query(models.Tank).filter(models.Tank.id == tank_id).first()
+    if not tank:
+        raise HTTPException(status_code=404, detail="Tank not found")
+        
+    existing = db.query(models.TankPlant).filter(
+        models.TankPlant.tank_id == tank_id,
+        models.TankPlant.plant_id == tp.plant_id
+    ).first()
+    
+    if existing:
+        existing.quantity += tp.quantity
+        db_tp = existing
+    else:
+        db_tp = models.TankPlant(tank_id=tank_id, plant_id=tp.plant_id, quantity=tp.quantity)
+        db.add(db_tp)
+        
+    db.commit()
+    db.refresh(db_tp)
+    return db_tp
+
+@app.delete("/tanks/{tank_id}")
+def delete_tank(tank_id: int, db: Session = Depends(get_db)):
+    tank = db.query(models.Tank).filter(models.Tank.id == tank_id).first()
+    if not tank:
+        raise HTTPException(status_code=404, detail="Tank not found")
+    
+    db.query(models.TankFish).filter(models.TankFish.tank_id == tank_id).delete()
+    db.query(models.TankPlant).filter(models.TankPlant.tank_id == tank_id).delete()
+    db.delete(tank)
+    db.commit()
+    return {"status": "deleted"}
+
+@app.post("/tanks/{tank_id}/chat")
+def chat_with_assistant(tank_id: int, req: schemas.ChatRequest, db: Session = Depends(get_db)):
+    tank = db.query(models.Tank).filter(models.Tank.id == tank_id).first()
+    if not tank:
+        raise HTTPException(status_code=404, detail="Tank not found")
+    
+    fishes = db.query(models.TankFish).filter(models.TankFish.tank_id == tank_id).all()
+    plants = db.query(models.TankPlant).filter(models.TankPlant.tank_id == tank_id).all()
+    
+    context = {
+        "tank_name": tank.name,
+        "volume": tank.size_liters,
+        "temp": tank.temperature,
+        "fishes": [{"name": f.species.name, "qty": f.quantity} for f in fishes if f.species],
+        "plants": [{"name": p.plant.name, "qty": p.quantity} for p in plants if p.plant]
+    }
+    
+    response = services.get_ai_chat_response(req.message, context)
+    return {"response": response}

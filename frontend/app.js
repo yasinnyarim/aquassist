@@ -12,6 +12,9 @@ const STATE = {
     chart: null,         // Chart.js instance for Water Analysis
     miniChart: null,     // sparkline on Dashboard
     activeParam: 'ph',   // which water-quality param tab is active
+    fishFilter: 'all',   // category filter
+    plantSpecies: [],
+    dashboardEvents: {},
 };
 
 // ── Water-quality demo data (backend has no time-series yet) ────
@@ -27,6 +30,44 @@ const WATER_DATA = {
            data:   [0.55, 0.62, 0.58, 0.71, 0.48, 0.52, 0.49, 0.47] },
 };
 
+const FISH_CATEGORY_LABELS = {
+    freshwater: 'Freshwater',
+    saltwater:  'Saltwater',
+    monster:    'Monster',
+    peaceful:   'Peaceful',
+    unknown:    'Uncategorized'
+};
+
+function normalizeFishCategory(species) {
+    if (!species) return 'unknown';
+    const category = (species.category || '').toLowerCase();
+    const tags = (species.compatibility_tags || '').toLowerCase();
+
+    if (category.includes('salt') || tags.includes('saltwater')) {
+        return 'saltwater';
+    }
+
+    if (category.includes('monster') || category === 'predator' || category === 'betta' || tags.includes('predator') || tags.includes('aggressive')) {
+        return 'monster';
+    }
+
+    if (tags.includes('peaceful')) {
+        return 'peaceful';
+    }
+
+    if (category.includes('livebear') || category.includes('tetra') || category.includes('danio') || category.includes('pleco') || category.includes('corydoras') || category.includes('cichlid') || tags.includes('schooling') || tags.includes('community')) {
+        return 'freshwater';
+    }
+
+    // Default to freshwater for standard aquarium species.
+    return 'freshwater';
+}
+
+function getFishDisplayCategory(species) {
+    const cat = normalizeFishCategory(species);
+    return FISH_CATEGORY_LABELS[cat] || FISH_CATEGORY_LABELS.unknown;
+}
+
 // ══════════════════════════════════════════════════════════════
 //  BOOT — single DOMContentLoaded, everything wired here
 // ══════════════════════════════════════════════════════════════
@@ -35,8 +76,16 @@ document.addEventListener('DOMContentLoaded', () => {
     wireModals();
     wireWaterTabs();
     preloadSpecies();
+    preloadPlants();
+    loadDashboardEvents();
     renderAquariumList();          // load tanks immediately
     showView('aquariums');         // start on aquarium list
+    
+    // Wire chat button
+    document.getElementById('chat-toggle-btn').addEventListener('click', () => {
+        document.getElementById('chat-widget').classList.toggle('hidden');
+    });
+    document.getElementById('chat-send-btn').addEventListener('click', handleChatSend);
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -70,10 +119,14 @@ function showView(name) {
         btn.classList.toggle('active', btn.dataset.view === name);
     });
 
+    STATE.currentView = name;
+
     // 4. Side effects per view
     if (name === 'water-analysis') renderWaterAnalysis();
     if (name === 'ai-report')      renderAIReport();
     if (name === 'dashboard' && STATE.selectedTank) renderDashboard(STATE.selectedTank.id);
+    if (name === 'fish' && STATE.selectedTank) renderFishTracking();
+    if (name === 'plants' && STATE.selectedTank) renderPlants();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -89,7 +142,7 @@ function wireSidebar() {
             if (!view) return;
 
             // Guard views that need a selected tank
-            if ((view === 'dashboard' || view === 'ai-report') && !STATE.selectedTank) {
+            if ((view === 'dashboard' || view === 'ai-report' || view === 'fish' || view === 'plants') && !STATE.selectedTank) {
                 showNoTankMessage(view);
                 return;
             }
@@ -101,7 +154,7 @@ function wireSidebar() {
 
 function showNoTankMessage(view) {
     // Temporarily show the view with an "empty state" prompt
-    showView(view === 'dashboard' ? 'aquariums' : view);
+    showView('aquariums');
     showInlineMsg(
         'aquariums-grid',
         '⬆️ Please click on an aquarium card above to open this section.',
@@ -128,12 +181,57 @@ function wireModals() {
                 alert('Select an aquarium first.');
                 return;
             }
-            showModal('add-fish-modal');
+            // Ensure species list is fresh when the modal opens
+            preloadSpecies().then(() => showModal('add-fish-modal'));
         });
     document.getElementById('btn-close-fish')
         .addEventListener('click', () => hideModal('add-fish-modal'));
     document.getElementById('form-add-fish')
         .addEventListener('submit', handleAddFish);
+        
+    // Define Species
+    document.getElementById('form-define-species')?.addEventListener('submit', handleDefineSpecies);
+    
+    // Add Plant
+    document.getElementById('btn-add-plant')?.addEventListener('click', () => {
+        if (!STATE.selectedTank) {
+            alert('Select an aquarium first.');
+            return;
+        }
+        preloadPlants().then(() => showModal('add-plant-modal'));
+    });
+    document.getElementById('form-add-plant')?.addEventListener('submit', handleAddPlant);
+
+    // Delete Tank
+    document.getElementById('btn-delete-tank')?.addEventListener('click', () => {
+        if (!STATE.selectedTank) return;
+        showModal('delete-tank-modal');
+    });
+    document.getElementById('btn-confirm-delete')?.addEventListener('click', handleDeleteTankConfirmed);
+
+    document.getElementById('btn-add-event')?.addEventListener('click', () => {
+        const form = document.getElementById('event-form');
+        if (!form) return;
+        form.classList.toggle('hidden');
+        if (!form.classList.contains('hidden')) {
+            document.getElementById('event-date').valueAsDate = new Date();
+            document.getElementById('event-desc').value = '';
+        }
+    });
+    document.getElementById('btn-cancel-event')?.addEventListener('click', () => {
+        document.getElementById('event-form')?.classList.add('hidden');
+    });
+    document.getElementById('event-form')?.addEventListener('submit', handleAddEvent);
+
+    // Fish Filters
+    document.querySelectorAll('.cat-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            STATE.fishFilter = tab.dataset.group;
+            renderFishTracking();
+        });
+    });
 }
 
 function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
@@ -187,7 +285,74 @@ async function renderAquariumList() {
 // ══════════════════════════════════════════════════════════════
 function selectTank(tank) {
     STATE.selectedTank = tank;
+    document.getElementById('chat-toggle-btn').classList.remove('hidden');
+    document.getElementById('chat-tank-label').textContent = tank.name;
     showView('dashboard');
+}
+
+function loadDashboardEvents() {
+    try {
+        const raw = localStorage.getItem('aquassist-dashboard-events');
+        STATE.dashboardEvents = raw ? JSON.parse(raw) : {};
+    } catch (err) {
+        console.warn('Failed to load dashboard events from storage', err);
+        STATE.dashboardEvents = {};
+    }
+}
+
+function saveDashboardEvents() {
+    try {
+        localStorage.setItem('aquassist-dashboard-events', JSON.stringify(STATE.dashboardEvents));
+    } catch (err) {
+        console.warn('Failed to save dashboard events to storage', err);
+    }
+}
+
+function getDashboardEvents(tankId) {
+    return STATE.dashboardEvents[tankId] || [];
+}
+
+function setDashboardEvents(tankId, events) {
+    STATE.dashboardEvents[tankId] = events;
+    saveDashboardEvents();
+}
+
+function renderDashboardEvents(tankId) {
+    const list = document.getElementById('dash-events-list');
+    if (!list) return;
+    const events = getDashboardEvents(tankId);
+    if (!events.length) {
+        list.innerHTML = '<p class="empty-state">No event entries yet. Click "Add Event" to record maintenance or observations.</p>';
+        return;
+    }
+
+    list.innerHTML = events.map(ev => `
+        <div class="event-item">
+            <span class="evt-date">${escHtml(ev.date)}</span>
+            <span class="evt-name">${escHtml(ev.description)}</span>
+        </div>
+    `).join('');
+}
+
+async function handleAddEvent(e) {
+    e.preventDefault();
+    if (!STATE.selectedTank) return;
+
+    const dateInput = document.getElementById('event-date');
+    const descInput = document.getElementById('event-desc');
+    const date = dateInput?.value;
+    const description = descInput?.value.trim();
+    if (!date || !description) {
+        alert('Please enter both date and event description.');
+        return;
+    }
+
+    const events = getDashboardEvents(STATE.selectedTank.id);
+    events.unshift({ date, description });
+    setDashboardEvents(STATE.selectedTank.id, events);
+    renderDashboardEvents(STATE.selectedTank.id);
+
+    document.getElementById('event-form')?.classList.add('hidden');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -209,6 +374,8 @@ async function renderDashboard(tankId) {
     document.getElementById('ds-fish-count').textContent   = '…';
     document.getElementById('dash-issues').classList.add('hidden');
     document.getElementById('dash-recs').classList.add('hidden');
+    document.getElementById('event-form')?.classList.add('hidden');
+    renderDashboardEvents(tankId);
 
     // -- Fetch fish count -----------------------------------
     try {
@@ -408,12 +575,36 @@ async function preloadSpecies() {
         if (!res.ok) return;
         const species = await res.json();
         const sel     = document.getElementById('fish-species-select');
+        if (!sel) return; // modal might not be in DOM yet
+
+        const categories = {
+            freshwater: 'Freshwater',
+            saltwater:  'Saltwater',
+            monster:    'Monster',
+            peaceful:   'Peaceful',
+            unknown:    'Uncategorized'
+        };
+
+        const grouped = species.reduce((acc, sp) => {
+            const category = normalizeFishCategory(sp);
+            acc[category] = acc[category] || [];
+            acc[category].push(sp);
+            return acc;
+        }, {});
+
         sel.innerHTML = '<option value="">— Select species —</option>';
-        species.forEach(sp => {
-            const opt       = document.createElement('option');
-            opt.value       = sp.id;
-            opt.textContent = `${sp.name} (${sp.adult_size_cm} cm)`;
-            sel.appendChild(opt);
+        Object.keys(FISH_CATEGORY_LABELS).forEach(category => {
+            const group = grouped[category] || [];
+            if (!group.length) return;
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = FISH_CATEGORY_LABELS[category];
+            group.forEach(sp => {
+                const opt       = document.createElement('option');
+                opt.value       = sp.id;
+                opt.textContent = sp.name;
+                optgroup.appendChild(opt);
+            });
+            sel.appendChild(optgroup);
         });
     } catch (_) {}
 }
@@ -424,21 +615,211 @@ async function handleAddFish(e) {
 
     const speciesId = document.getElementById('fish-species-select').value;
     const qty       = parseInt(document.getElementById('fish-quantity').value);
+    const sizeCm    = parseFloat(document.getElementById('fish-size').value);
     if (!speciesId) { alert('Please select a species.'); return; }
+    if (!sizeCm || sizeCm <= 0) { alert('Please enter a valid fish size in cm.'); return; }
 
     try {
         const res = await fetch(`${API}/tanks/${STATE.selectedTank.id}/fish`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ species_id: parseInt(speciesId), quantity: qty }),
+            body: JSON.stringify({ species_id: parseInt(speciesId), quantity: qty, size_cm: sizeCm }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         hideModal('add-fish-modal');
         document.getElementById('fish-quantity').value = 1;
+        document.getElementById('fish-size').value = '';
         await renderDashboard(STATE.selectedTank.id);   // refresh stats
+        if (STATE.currentView === 'fish') renderFishTracking();
     } catch (err) {
         alert(`Failed to add fish: ${err.message}`);
     }
+}
+
+async function handleDefineSpecies(e) {
+    e.preventDefault();
+    const data = {
+        name: document.getElementById('df-name').value,
+        category: document.getElementById('df-category').value,
+        aggression_level: "low",
+        min_temp: 22, max_temp: 28, adult_size_cm: 5, bioload_factor: 0.5,
+        compatibility_tags: document.getElementById('df-category').value
+    };
+    try {
+        const res = await fetch(`${API}/fish-species/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        if (!res.ok) throw new Error("Failed Server Response");
+        hideModal('define-species-modal');
+        document.getElementById('form-define-species').reset();
+        await preloadSpecies();
+        alert("Species defined successfully!");
+    } catch (err) { alert(err.message); }
+}
+
+async function preloadPlants() {
+    try {
+        const res = await fetch(`${API}/plant-species/`);
+        if (!res.ok) return;
+        STATE.plantSpecies = await res.json();
+        const sel = document.getElementById('plant-select');
+        if (!sel) return; // Modal might not be in DOM yet
+        sel.innerHTML = '<option value="">— Select plant —</option>';
+        STATE.plantSpecies.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name;
+            sel.appendChild(opt);
+        });
+    } catch (_) {}
+}
+
+async function handleAddPlant(e) {
+    e.preventDefault();
+    if (!STATE.selectedTank) return;
+    try {
+        const res = await fetch(`${API}/tanks/${STATE.selectedTank.id}/plants`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plant_id: parseInt(document.getElementById('plant-select').value), quantity: parseInt(document.getElementById('plant-qty').value) })
+        });
+        if (!res.ok) throw new Error("Server error");
+        hideModal('add-plant-modal');
+        renderPlants();
+        renderDashboard(STATE.selectedTank.id);
+    } catch (err) { alert(err.message); }
+}
+
+async function renderFishTracking() {
+    if (!STATE.selectedTank) return;
+    try {
+        const res = await fetch(`${API}/tanks/${STATE.selectedTank.id}/fish`);
+        const items = await res.json();
+        const grid = document.getElementById('fish-grid');
+        if (!grid) return;
+
+        const activeFilter = STATE.fishFilter || 'all';
+        const filteredItems = activeFilter === 'all'
+            ? items
+            : items.filter(f => normalizeFishCategory(f.species) === activeFilter);
+
+        if (filteredItems.length === 0) {
+            grid.innerHTML = activeFilter === 'all'
+                ? '<p class="empty-state">No fish have been added to this aquarium yet.</p>'
+                : '<p class="empty-state">No fish found in this category.</p>';
+            return;
+        }
+
+        const grouped = filteredItems.reduce((acc, f) => {
+            const category = normalizeFishCategory(f.species);
+            acc[category] = acc[category] || [];
+            acc[category].push(f);
+            return acc;
+        }, {});
+
+        const orderedCategories = ['freshwater', 'saltwater', 'peaceful', 'monster', 'unknown'];
+        let html = '';
+
+        if (activeFilter === 'all') {
+            orderedCategories.forEach(category => {
+                const fishes = grouped[category] || [];
+                if (!fishes.length) return;
+                html += `
+                    <section class="fish-category-section">
+                        <div class="fish-category-header">
+                            <h2>${FISH_CATEGORY_LABELS[category] || category}</h2>
+                            <span class="badge">${fishes.length} item${fishes.length === 1 ? '' : 's'}</span>
+                        </div>
+                        <div class="cards-grid fish-category-grid">
+                            ${fishes.map(renderFishCard).join('')}
+                        </div>
+                    </section>`;
+            });
+        } else {
+            const fishes = grouped[activeFilter] || [];
+            html = `
+                <section class="fish-category-section">
+                    <div class="fish-category-header">
+                        <h2>${FISH_CATEGORY_LABELS[activeFilter] || activeFilter}</h2>
+                        <span class="badge">${fishes.length} item${fishes.length === 1 ? '' : 's'}</span>
+                    </div>
+                    <div class="cards-grid fish-category-grid">
+                        ${fishes.map(renderFishCard).join('')}
+                    </div>
+                </section>`;
+        }
+
+        grid.innerHTML = html;
+    } catch (e) {
+        console.error('Failed to render fish tracking', e);
+    }
+}
+
+function renderFishCard(f) {
+    const speciesName = f.species?.name || 'Unknown species';
+    const displayCategory = getFishDisplayCategory(f.species);
+    const addedDate = f.added_at ? new Date(f.added_at).toLocaleDateString() : 'Unknown date';
+    const size = f.size_cm ? `${f.size_cm.toFixed(1)} cm` : `${f.species?.adult_size_cm ?? '—'} cm`;
+
+    return `
+        <div class="card fish-card">
+            <div class="fish-card-head">
+                <h3>${speciesName}</h3>
+                <span class="fish-card-badge">${displayCategory}</span>
+            </div>
+            <p><strong>Quantity:</strong> ${f.quantity}</p>
+            <p><strong>Size:</strong> ${escHtml(size)}</p>
+            <small>Added: ${addedDate}</small>
+        </div>`;
+}
+
+async function renderPlants() {
+    if (!STATE.selectedTank) return;
+    try {
+        const res = await fetch(`${API}/tanks/${STATE.selectedTank.id}/plants`);
+        const plants = await res.json();
+        const grid = document.getElementById('plants-grid');
+        grid.innerHTML = plants.map(p => `
+            <div style="border-bottom: 1px solid #ccc; padding: 10px 0;">
+                <h4 style="margin:0">${p.plant.name} <span style="background:#10b981; color:white; padding:2px 8px; border-radius:12px; font-size:12px">x${p.quantity}</span></h4>
+                <p style="margin:5px 0 0; color:#666">${p.plant.benefits}</p>
+            </div>
+        `).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function handleDeleteTankConfirmed() {
+    if (!STATE.selectedTank) {
+        hideModal('delete-tank-modal');
+        return;
+    }
+    try {
+        const res = await fetch(`${API}/tanks/${STATE.selectedTank.id}`, { method: 'DELETE' });
+        if (res.ok) {
+            STATE.selectedTank = null;
+            document.getElementById('chat-toggle-btn').classList.add('hidden');
+            hideModal('delete-tank-modal');
+            await renderAquariumList();
+            showView('aquariums');
+        }
+    } catch (e) { alert("Failed to delete tank."); }
+}
+
+async function handleChatSend() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if (!msg || !STATE.selectedTank) return;
+    
+    const body = document.getElementById('chat-body');
+    body.innerHTML += `<div style="text-align:right; margin:10px 0;"><span style="background:#1a73e8; color:white; padding:8px 12px; border-radius:12px; display:inline-block">${escHtml(msg)}</span></div>`;
+    input.value = '';
+    
+    try {
+        const res = await fetch(`${API}/tanks/${STATE.selectedTank.id}/chat`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        body.innerHTML += `<div style="text-align:left; margin:10px 0;"><span style="background:#e2e8f0; color:#1e293b; padding:8px 12px; border-radius:12px; display:inline-block">${escHtml(data.response)}</span></div>`;
+        body.scrollTop = body.scrollHeight;
+    } catch (e) { console.error(e); }
 }
 
 // ══════════════════════════════════════════════════════════════

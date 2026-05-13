@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
+from datetime import datetime
 
 class TankBase(BaseModel):
     name: str
@@ -17,12 +18,15 @@ class TankResponse(TankBase):
 
 class FishSpeciesBase(BaseModel):
     name: str
+    category: Optional[str] = "freshwater"           # saltwater, freshwater, monster, peaceful
     min_temp: float
     max_temp: float
     aggression_level: str
     adult_size_cm: float
     bioload_factor: float
     compatibility_tags: str
+    difficulty_level: str = "medium"
+    image_url: Optional[str] = None
 
 class FishSpeciesCreate(FishSpeciesBase):
     pass
@@ -34,12 +38,40 @@ class FishSpeciesResponse(FishSpeciesBase):
 class TankFishCreate(BaseModel):
     species_id: int
     quantity: int
+    size_cm: Optional[float] = None
 
 class TankFishResponse(BaseModel):
     id: int
     tank_id: int
     species: FishSpeciesResponse
     quantity: int
+    size_cm: Optional[float] = None
+    added_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class PlantSpeciesBase(BaseModel):
+    name: str
+    description: str
+    benefits: str
+    difficulty: str
+    light_requirement: str
+    image_url: Optional[str] = None
+
+class PlantSpeciesResponse(PlantSpeciesBase):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
+
+class TankPlantCreate(BaseModel):
+    plant_id: int
+    quantity: int
+
+class TankPlantResponse(BaseModel):
+    id: int
+    tank_id: int
+    plant: PlantSpeciesResponse
+    quantity: int
+    added_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,3 +86,6 @@ class TankAnalysisResponse(BaseModel):
     
 class ProblemDiagnosisRequest(BaseModel):
     description: str
+
+class ChatRequest(BaseModel):
+    message: str

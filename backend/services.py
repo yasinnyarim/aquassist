@@ -9,13 +9,21 @@ except ImportError:
 import models
 from typing import List
 
-def calculate_bioload(tank: models.Tank, fishes: List[models.TankFish]):
+def calculate_bioload(tank: models.Tank, fishes: List[models.TankFish], plants: List[models.TankPlant] = []):
     total_bioload = 0.0
     for tf in fishes:
         species = tf.species
         if species:
             # sum(quantity x size x bioload_factor)
             total_bioload += tf.quantity * species.adult_size_cm * species.bioload_factor
+
+    # Plants reduce bioload (nitrate reduction)
+    plant_reduction = 0.0
+    for tp in plants:
+        if tp.plant:
+            plant_reduction += tp.quantity * 2.5 # Each plant reduces bioload by 2.5 units
+            
+    total_bioload = max(0.0, total_bioload - plant_reduction)
 
     if tank.size_liters > 0:
         bioload_percent = (total_bioload / tank.size_liters) * 100
@@ -30,6 +38,7 @@ def calculate_compatibility(tank: models.Tank, fishes: List[models.TankFish]):
     species_list = [tf.species for tf in fishes if tf.species]
     aggression_levels = [s.aggression_level.lower() for s in species_list]
     sizes = [s.adult_size_cm for s in species_list]
+    categories = [s.category.lower() for s in species_list if s.category]
     
     if "high" in aggression_levels and "low" in aggression_levels:
         issues.append("Aggressive fish mixed with peaceful fish.")
@@ -39,6 +48,10 @@ def calculate_compatibility(tank: models.Tank, fishes: List[models.TankFish]):
         min_size = min(sizes)
         if max_size > min_size * 3:
             issues.append("Considerable size difference detected, potential predator-prey conflict.")
+
+    if len(set(categories)) > 1:
+        if "saltwater" in categories and "freshwater" in categories:
+            issues.append("CRITICAL: Saltwater and freshwater fish cannot live together.")
             
     if tank.temperature:
         for s in species_list:
@@ -77,8 +90,8 @@ def generate_recommendations(bioload_percent: float, has_filter: bool, issues: L
         actions.append("Acilen tank hacmine uygun bir filtre edinin ve sürekli çalıştırın.")
     if any("temperature" in i.lower() for i in issues):
         actions.append("Tank sıcaklığını balıkların ortak tolerans aralığına ayarlayın.")
-    if any("temperature" not in i.lower() for i in issues):
-        actions.append("Agresif veya etçil balıklar ile barışçıl balıkları aynı tankta tutmayın.")
+    if any("compatibility" in i.lower() or "aggressive" in i.lower() for i in issues):
+        actions.append("Tür uyumsuzluğu tespit edildi. Balıkları ayırmayı planlayın.")
         
     if not actions:
         actions.append("Mevcut dengeyi korumaya devam edin!")
@@ -184,3 +197,39 @@ def diagnose_problem(description: str):
         return response.choices[0].message.content
     except Exception as e:
         return f"LLM integration failed: {str(e)}"
+
+def get_ai_chat_response(message: str, context: dict):
+    if not client:
+        # Fun fallback logic for the demo
+        msg = message.lower()
+        if "selam" in msg or "merhaba" in msg:
+            return f"Merhaba! {context['tank_name']} akvaryumunuz için size nasıl yardımcı olabilirim?"
+        if "balık" in msg or "fish" in msg:
+            return f"Akvaryumunuzda şu an {len(context['fishes'])} farklı tür balık var. Genel durumları iyi görünüyor."
+        if "bitki" in msg or "plant" in msg:
+            return f"{context['tank_name']} tankınızda {len(context['plants'])} tür bitki bulunuyor. Bitkiler su kalitesini artırmaya yardımcı olur."
+        if "durum" in msg or "status" in msg:
+            return f"Akvaryumunuzun hacmi {context['volume']} litre. Sıcaklık {context['temp']}°C. Her şey yolunda görünüyor!"
+        return "Bu konuda size yardımcı olabilirim. Akvaryumunuzun sağlığı için su değişimlerini ihmal etmeyin."
+
+    prompt = f"""
+    Sen AquAssist adlı akıllı akvaryum asistanısın. Kullanıcının akvaryumu hakkında konuşuyorsun.
+    Akvaryum Bilgileri:
+    İsim: {context['tank_name']}
+    Hacim: {context['volume']} L
+    Sıcaklık: {context['temp']}°C
+    Balıklar: {', '.join([f"{f['qty']}x {f['name']}" for f in context['fishes']])}
+    Bitkiler: {', '.join([f"{p['qty']}x {p['name']}" for p in context['plants']])}
+    
+    Kullanıcı: "{message}"
+    Cevabı kısa, cana yakın ve uzman bir dille ver. Türkçe konuş.
+    """
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=200
+        )
+        return response.choices[0].message.content
+    except:
+        return f"{context['tank_name']} hakkında sorularınızı yanıtlamak için buradayım. Şu an {context['volume']} litrelik tankınızda her şey dengeli görünüyor."
