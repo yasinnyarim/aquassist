@@ -78,9 +78,12 @@ document.addEventListener('DOMContentLoaded', () => {
     preloadSpecies();
     preloadPlants();
     loadDashboardEvents();
-    renderAquariumList();          // load tanks immediately
-    showView('aquariums');         // start on aquarium list
-    
+    renderAquariumList();          // preload tank list for Akvaryumlar sekmesi
+    showView('home');              // landing: hero + tiles only
+
+    document.getElementById('btn-brand-home')?.addEventListener('click', () => showView('home'));
+    document.getElementById('btn-tile-collections')?.addEventListener('click', () => showView('aquariums'));
+
     // Wire chat button
     document.getElementById('chat-toggle-btn').addEventListener('click', () => {
         document.getElementById('chat-widget').classList.toggle('hidden');
@@ -107,7 +110,8 @@ function showView(name) {
     // 2. Show the target panel
     const target = document.getElementById('view-' + name);
     if (target) {
-        target.style.display = 'block';
+        // Tasarım stüdyosu flex kolonu doldurabilsin; diğer görünümler blok kalsın.
+        target.style.display = name === 'design' ? 'flex' : 'block';
         target.classList.add('active');
     } else {
         console.error('[showView] No element with id="view-' + name + '"');
@@ -120,8 +124,13 @@ function showView(name) {
     });
 
     STATE.currentView = name;
+    document.documentElement.dataset.aqView = name;
 
     // 4. Side effects per view
+    if (name === 'design') {
+        import('./design-studio.js?v=4').then((m) => m.bootstrapDesignStudio()).catch((err) => console.error('[design]', err));
+    }
+    if (name === 'aquariums')      renderAquariumList();
     if (name === 'water-analysis') renderWaterAnalysis();
     if (name === 'ai-report')      renderAIReport();
     if (name === 'dashboard' && STATE.selectedTank) renderDashboard(STATE.selectedTank.id);
@@ -172,7 +181,12 @@ function wireModals() {
     document.getElementById('btn-hero-create')
         .addEventListener('click', () => showModal('create-modal'));
     document.getElementById('btn-hero-explore')
-        .addEventListener('click', () => document.getElementById('aquariums-grid')?.scrollIntoView({ behavior: 'smooth' }));
+        .addEventListener('click', () => {
+            showView('aquariums');
+            requestAnimationFrame(() => {
+                document.getElementById('aquariums-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
     document.getElementById('btn-close-create')
         .addEventListener('click', () => hideModal('create-modal'));
     document.getElementById('form-create-tank')
@@ -801,7 +815,7 @@ async function handleDeleteTankConfirmed() {
             document.getElementById('chat-toggle-btn').classList.add('hidden');
             hideModal('delete-tank-modal');
             await renderAquariumList();
-            showView('aquariums');
+            showView('home');
         }
     } catch (e) { alert("Failed to delete tank."); }
 }

@@ -256,3 +256,7 @@ def chat_with_assistant(tank_id: int, req: schemas.ChatRequest, db: Session = De
 
     response = services.get_ai_chat_response(req.message, context)
     return {"response": response}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)

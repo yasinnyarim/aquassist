@@ -4,21 +4,29 @@
     <meta charset="UTF-8">
     <title>AquAssist Dashboard</title>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=12">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+        }
+    }
+    </script>
 </head>
 <body>
     <div class="app-wrapper">
         <header class="site-header">
             <div class="topbar">
                 <div class="topbar-left">
-                    <div class="brand">
+                    <button type="button" class="brand brand-btn" id="btn-brand-home" aria-label="Anasayfa">
                         <i class="fas fa-water"></i> AquAssist
-                    </div>
+                    </button>
                 </div>
                 <div class="topbar-right">
                     <a href="#" class="utility-link">Müşteri Hizmetleri</a>
@@ -31,8 +39,10 @@
             </div>
             <nav class="category-strip" aria-label="Ana kategoriler">
                 <div class="category-strip-inner">
+                    <button type="button" class="cat-link" data-view="home">Anasayfa</button>
                     <button type="button" class="cat-link" data-view="aquariums">Akvaryumlar</button>
                     <button type="button" class="cat-link" data-view="dashboard">Kontrol paneli</button>
+                    <button type="button" class="cat-link cat-link--design" data-view="design">Tasarım</button>
                     <button type="button" class="cat-link" data-view="water-analysis">Su analizi</button>
                     <button type="button" class="cat-link" data-view="fish">Balıklar</button>
                     <button type="button" class="cat-link" data-view="plants">Bitkiler</button>
@@ -42,14 +52,14 @@
         </header>
 
         <main class="main-content">
-            <!-- AQUARIUMS LIST VIEW -->
-            <div id="view-aquariums" class="view">
+            <!-- HOME: hero + feature tiles only -->
+            <div id="view-home" class="view">
                 <section class="video-hero">
                     <div class="video-hero-inner">
                         <div class="video-hero-copy">
                             <span class="eyebrow">AquAssist Premiere</span>
                             <h1>Watch your aquarium care come alive.</h1>
-                            <p>Experience a bold video-led landing page that feels more like a lifestyle brand showcase.</p>
+                            <p>A world beneath the surface, perfected.</p>
                             <div class="hero-actions">
                                 <button class="btn btn-primary" id="btn-hero-create"><i class="fas fa-plus"></i> Create Aquarium</button>
                                 <button class="btn btn-secondary btn-outlined" id="btn-hero-explore">Browse Tanks</button>
@@ -74,7 +84,7 @@
                         <span class="eyebrow">Collections</span>
                         <h2>Swatch-style tank collections</h2>
                         <p>Discover color-driven aquarium sets, performance tracking and care guides with premium visuals.</p>
-                        <button class="btn btn-primary">Explore now</button>
+                        <button type="button" class="btn btn-primary" id="btn-tile-collections">Explore now</button>
                     </div>
                     <div class="tile tile-small">
                         <h3>Balık Koleksiyonu</h3>
@@ -89,8 +99,12 @@
                         <p>Get instant diagnosis and smarter maintenance advice.</p>
                     </div>
                 </section>
-                <div class="header-row">
-                    <h1 class="view-title">Aquarium manager</h1>
+            </div>
+
+            <!-- AQUARIUM LIST (Akvaryumlar sekmesi) -->
+            <div id="view-aquariums" class="view">
+                <div class="header-row aquariums-page-header">
+                    <h1 class="view-title">Akvaryumlarım</h1>
                     <button class="btn btn-primary" id="btn-show-create"><i class="fas fa-plus"></i> New Aquarium</button>
                 </div>
                 <div class="cards-grid" id="aquariums-grid"></div>
@@ -303,6 +317,107 @@
                 </div>
             </div>
 
+            <!-- 3D DESIGN STUDIO (premium configurator) -->
+            <div id="view-design" class="view" style="display:none;">
+                <div class="design-studio">
+                    <header class="design-topbar">
+                        <div class="design-topbar-left">
+                            <span class="design-badge">Studio</span>
+                            <h1 class="design-project-title">Akvaryum Konfigüratörü</h1>
+                        </div>
+                        <div class="design-topbar-actions">
+                            <button type="button" class="design-chip" id="design-light-studio" title="Işık">Stüdyo</button>
+                            <button type="button" class="design-chip" id="design-light-mood" title="Işık">Gece</button>
+                            <button type="button" class="design-chip" id="design-light-dramatic" title="Işık">Sinematik</button>
+                            <span class="design-divider"></span>
+                            <button type="button" class="design-tool-btn" id="design-undo" title="Geri"><i class="fas fa-rotate-left"></i></button>
+                            <button type="button" class="design-tool-btn" id="design-redo" title="İleri"><i class="fas fa-rotate-right"></i></button>
+                            <button type="button" class="design-tool-btn design-tool-btn--primary" id="design-save"><i class="fas fa-floppy-disk"></i> Kaydet</button>
+                            <button type="button" class="design-tool-btn" id="design-load"><i class="fas fa-folder-open"></i> Yükle</button>
+                        </div>
+                    </header>
+                    <div class="design-workspace">
+                        <aside class="design-palette">
+                            <p class="design-palette-hint">Öğeyi sürükleyip sahneye bırakın</p>
+                            <div class="design-acc" data-open>
+                                <button type="button" class="design-acc-head">Su bitkileri</button>
+                                <div class="design-acc-body">
+                                    <div class="design-asset" draggable="true" data-asset="plant-rotala">Rotala</div>
+                                    <div class="design-asset" draggable="true" data-asset="plant-anubias">Anubias</div>
+                                    <div class="design-asset" draggable="true" data-asset="plant-monte">Monte Carlo</div>
+                                    <div class="design-asset" draggable="true" data-asset="plant-java">Java Fern</div>
+                                </div>
+                            </div>
+                            <div class="design-acc">
+                                <button type="button" class="design-acc-head">Kök &amp; ağaç</button>
+                                <div class="design-acc-body">
+                                    <div class="design-asset" draggable="true" data-asset="wood-spider">Örümcek kök</div>
+                                    <div class="design-asset" draggable="true" data-asset="wood-bonsai">Bonsai ağaç</div>
+                                    <div class="design-asset" draggable="true" data-asset="wood-branch">Dal kümesi</div>
+                                </div>
+                            </div>
+                            <div class="design-acc">
+                                <button type="button" class="design-acc-head">Taş &amp; kaya</button>
+                                <div class="design-acc-body">
+                                    <div class="design-asset" draggable="true" data-asset="rock-seiryu">Seiryu</div>
+                                    <div class="design-asset" draggable="true" data-asset="rock-lava">Lav taşı</div>
+                                    <div class="design-asset" draggable="true" data-asset="rock-river">Irmağın taşı</div>
+                                </div>
+                            </div>
+                            <div class="design-acc">
+                                <button type="button" class="design-acc-head">Kum &amp; zemin</button>
+                                <div class="design-acc-body">
+                                    <div class="design-asset" draggable="true" data-asset="substrate-white">Beyaz kuvars</div>
+                                    <div class="design-asset" draggable="true" data-asset="substrate-black">Siyah kuvars</div>
+                                    <div class="design-asset" draggable="true" data-asset="substrate-soil">Bitki toprağı</div>
+                                </div>
+                            </div>
+                            <div class="design-acc">
+                                <button type="button" class="design-acc-head">Dekoratif</button>
+                                <div class="design-acc-body">
+                                    <div class="design-asset" draggable="true" data-asset="deco-temple">Tapınak sütunu</div>
+                                    <div class="design-asset" draggable="true" data-asset="deco-jar">Amfora</div>
+                                    <div class="design-asset" draggable="true" data-asset="deco-drift">Kütük</div>
+                                </div>
+                            </div>
+                            <div class="design-acc">
+                                <button type="button" class="design-acc-head">Mercan &amp; tuzlu su</button>
+                                <div class="design-acc-body">
+                                    <div class="design-asset" draggable="true" data-asset="coral-branch">Dal mercan</div>
+                                    <div class="design-asset" draggable="true" data-asset="coral-brain">Beyin mercanı</div>
+                                    <div class="design-asset" draggable="true" data-asset="coral-anemone">Anemon</div>
+                                </div>
+                            </div>
+                        </aside>
+                        <div class="design-viewport" id="design-viewport">
+                            <div id="design-canvas-host" class="design-canvas-host"></div>
+                            <div class="design-viewport-hint">Sol tık: seç · Sağ sürükle: kamera · Tekerlek: yakınlaş</div>
+                        </div>
+                        <aside class="design-inspector" id="design-inspector">
+                            <h2 class="design-inspector-title">Seçili öğe</h2>
+                            <p class="design-inspector-empty" id="design-inspector-empty">Sahneden bir öğe seçin veya paletten bırakın.</p>
+                            <div class="design-inspector-fields hidden" id="design-inspector-fields">
+                                <label class="design-field"><span>Ad</span><input type="text" id="design-prop-label" readonly /></label>
+                                <label class="design-field"><span>Dönüş (°)</span><input type="range" id="design-prop-rot" min="0" max="360" value="0" /></label>
+                                <label class="design-field"><span>Ölçek</span><input type="range" id="design-prop-scale" min="40" max="200" value="100" /></label>
+                                <label class="design-field"><span>Yükseklik</span><input type="range" id="design-prop-y" min="0" max="100" value="30" /></label>
+                                <button type="button" class="design-delete-btn" id="design-delete-selected"><i class="fas fa-trash"></i> Kaldır</button>
+                            </div>
+                            <div class="design-snap">
+                                <label class="design-check"><input type="checkbox" id="design-snap-grid" checked /> Izgaraya hizala</label>
+                            </div>
+                        </aside>
+                    </div>
+                    <footer class="design-footer">
+                        <span class="design-footer-label">Hazır temalar</span>
+                        <button type="button" class="design-preset" data-preset="minimal">Minimal Zen</button>
+                        <button type="button" class="design-preset" data-preset="jungle">Neon Orman</button>
+                        <button type="button" class="design-preset" data-preset="reef">Resif köşesi</button>
+                        <button type="button" class="design-preset" data-preset="clear">Boş tank</button>
+                    </footer>
+                </div>
+            </div>
+
             <!-- WATER ANALYSIS VIEW -->
             <div id="view-water-analysis" class="view">
                 <h1 class="view-title">Water quality under control</h1>
@@ -417,6 +532,6 @@
 
 
     </div>
-    <script src="app.js?v=6"></script>
+    <script src="app.js?v=14"></script>
 </body>
 </html>
