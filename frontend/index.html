@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=15">
     <script type="importmap">
     {
         "imports": {
@@ -82,23 +82,240 @@
                 <section class="homepage-tiles">
                     <div class="tile tile-feature">
                         <span class="eyebrow">Collections</span>
-                        <h2>Swatch-style tank collections</h2>
-                        <p>Discover color-driven aquarium sets, performance tracking and care guides with premium visuals.</p>
+                        <h2>Dutch Aquarium Aquascape</h2>
+                        <p>Hollanda tarzı bitki düzeni: yoğun renk, teras ve 1930’lardan gelen klasik akvaryum sanatı.</p>
                         <button type="button" class="btn btn-primary" id="btn-tile-collections">Explore now</button>
                     </div>
                     <div class="tile tile-small">
                         <h3>Balık Koleksiyonu</h3>
-                        <p>Choose your species with precise size control.</p>
+                        <p>Tatlı su türlerini keşfedin; topluluk tankınız için uyumlu türleri seçin.</p>
+                        <button type="button" class="btn btn-primary tile-learn-btn" id="btn-tile-fish">Learn more</button>
                     </div>
                     <div class="tile tile-small">
-                        <h3>Bitki Bakımı</h3>
-                        <p>Match the right plants to your aquarium style.</p>
-                    </div>
-                    <div class="tile tile-small">
-                        <h3>AI Rapor</h3>
-                        <p>Get instant diagnosis and smarter maintenance advice.</p>
+                        <h3>Bitki Koleksiyonu</h3>
+                        <p>Ön, orta ve arka plan bitkileriyle derinlikli bir akvaryum oluşturun.</p>
+                        <button type="button" class="btn btn-primary tile-learn-btn" id="btn-tile-plants">Learn more</button>
                     </div>
                 </section>
+            </div>
+
+            <!-- DUTCH AQUASCAPE GUIDE (Collections → Explore now) -->
+            <div id="view-dutch-aquascape" class="view">
+                <article class="dutch-article">
+                    <header class="dutch-article-header">
+                        <button type="button" class="dutch-back-btn" id="btn-dutch-back"><i class="fas fa-arrow-left"></i> Anasayfa</button>
+                        <p class="dutch-article-meta">AquAssist Collections · Güncellendi Mayıs 2026</p>
+                        <h1 class="dutch-article-title">Dutch Aquarium Aquascape: A style from the 1930s</h1>
+                    </header>
+                    <div class="dutch-article-body">
+                        <p class="dutch-lead">Tatlı su akvaryumlarında iki büyük akvaryum düzeni öne çıkar: Nature ve Dutch tarzı. Dutch Aquarium Aquascape en eskisidir; 1930’larda Hollanda’da, NBAT (Hollanda Akvaryumcular Derneği) ile popülerleşmiştir.</p>
+                        <figure class="dutch-figure dutch-figure--hero">
+                            <img src="assets/dutch/dutch-1.png" alt="Dutch tarzı akvaryum" loading="lazy" />
+                            <figcaption>The Dutch Aquarium</figcaption>
+                        </figure>
+                        <h2>Special Features of the Dutch Aquarium</h2>
+                        <p>Dutch akvaryum tarzı odun, kaya ve sert dekor kullanımını zorunlu kılmaz; ana odak su bitkilerinin büyümesi ve düzenidir.</p>
+                        <p>Geleneksel Dutch tanklar su altı bahçeleri gibidir ve belirli bir biyotopu taklit etmek zorunda değildir.</p>
+                        <p>Bitkilerin yerleşimi şekil ve renkte birbirini tamamlayarak derinlik hissi yaratır. En iyi örnekler yoğunluk, kontrast ve ince renk kullanımıyla tanınır.</p>
+                        <figure class="dutch-figure">
+                            <img src="assets/dutch/dutch-2.png" alt="Dutch aquascaping" loading="lazy" />
+                            <figcaption>The Dutch Aquarium – Aquascaping Styles</figcaption>
+                        </figure>
+                        <h2>Design and Layout Techniques Applied to the Dutch Aquarium Style</h2>
+                        <p>En yaygın teknik <strong>teraslama</strong>dır. Tabanın <strong>%70’inden fazlası</strong> bitkiyle kaplı olmalıdır.</p>
+                        <p>Kontrast renk, yükseklik ve doku ile sağlanır; gruplar arası boşluklar patika ve derinlik hissi verir.</p>
+                        <figure class="dutch-figure">
+                            <img src="assets/dutch/dutch-3.png" alt="Dutch teras düzeni" loading="lazy" />
+                            <figcaption>The Dutch Aquarium</figcaption>
+                        </figure>
+                        <h2>Common Used Plants in the Dutch Aquarium</h2>
+                        <ul class="dutch-list">
+                            <li><strong>Saururus cernuus</strong>, <strong>Lobelia cardinalis</strong> — Dutch street patikası</li>
+                            <li><strong>Hygrophila corymbosa</strong>, <strong>Limnophila aquatica</strong> — büyük saplı bitkiler</li>
+                            <li><strong>Cryptocoryne</strong>, <strong>Rotala</strong>, <strong>Alternanthera reineckii</strong></li>
+                            <li><strong>Java moss</strong> — gruplar arası kontrast</li>
+                        </ul>
+                        <figure class="dutch-figure">
+                            <img src="assets/dutch/dutch-4.png" alt="Dutch bitkiler" loading="lazy" />
+                            <figcaption>The Dutch Aquarium – Aquascaping Styles</figcaption>
+                        </figure>
+                        <h2>Recommended Fish for the Dutch Aquascaping Style</h2>
+                        <p>Büyük sürüler tercih edilir; <strong>Congo tetra</strong> veya <strong>melek balığı</strong> uygun seçeneklerdir.</p>
+                        <h2>Equipment</h2>
+                        <ul class="dutch-list">
+                            <li>LED veya floresan aydınlatma</li>
+                            <li>Dış filtre veya sump</li>
+                            <li>CO₂ — 15–20 ppm</li>
+                            <li>Kil / laterit substrat ve düzenli gübre</li>
+                        </ul>
+                        <h2>Maintenance Difficulties in the Dutch Aquarium</h2>
+                        <p>Sık budama gerekir; tank genelde en iyi <strong>ön cepheden</strong> izlenir.</p>
+                        <h2>Key aspects in the Dutch Aquarium Judging Contest Scoring</h2>
+                        <ul class="dutch-list">
+                            <li>Bitki ve balık sağlığı, su parametreleri</li>
+                            <li>Bitki seçimi, renk ve kontrast</li>
+                            <li>Balık uyumu ve genel düzen</li>
+                            <li>Ekipmanın görünür olmaması</li>
+                        </ul>
+                        <p class="dutch-article-credit">Kaynak: <a href="https://aquascapinglove.com/basics/the-dutch-aquarium/" target="_blank" rel="noopener noreferrer">Aquascaping Love – The Dutch Aquarium</a></p>
+                    </div>
+                </article>
+            </div>
+
+            <!-- FRESHWATER FISH CATALOG (Balık Koleksiyonu → Learn more) -->
+            <div id="view-fish-catalog" class="view">
+                <div class="catalog-page">
+                    <header class="catalog-header">
+                        <button type="button" class="dutch-back-btn" id="btn-fish-catalog-back"><i class="fas fa-arrow-left"></i> Anasayfa</button>
+                        <p class="catalog-meta">AquAssist · Balık Koleksiyonu</p>
+                        <h1 class="catalog-title">Freshwater Fish</h1>
+                        <p class="catalog-lead">Topluluk akvaryumunuz için en popüler tatlı su türlerini keşfedin. Her kategori, LiveAquaria® düzeninden esinlenerek AquAssist ile planlamanıza yardımcı olur.</p>
+                    </header>
+                    <div class="catalog-grid">
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1524704654690-b4c3d5a0e3a0?w=600&h=400&fit=crop" alt="Tetras" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Tetras</h2>
+                                <p>Barışçıl topluluk tankları için aktif sürü balıkları; neon ve cardinal türleri en bilinenleridir.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&h=400&fit=crop" alt="Bettas" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Bettas (Siamese Fighting Fish)</h2>
+                                <p>Canlı renkleri ve akıcı yüzgeçleriyle en popüler türlerden biri; tek başına veya dikkatli eşleştirmeyle tutulur.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1535591274191-e4546492b0a8?w=600&h=400&fit=crop" alt="Gouramis" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Gouramis</h2>
+                                <p>Labyrinth balıkları; cüce gouramiler sakin topluluk tankları için idealdir.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1571752726703-5e7d1f6a986d?w=600&h=400&fit=crop" alt="Cory Catfish" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Cory (Corydoras) Catfish</h2>
+                                <p>Barışçıl dip süpürücüleri; kum tabanlı tanklarda sürü halinde mutlu olurlar.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1522069169874-ffed3d045bea?w=600&h=400&fit=crop" alt="African Cichlids" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>African Cichlids</h2>
+                                <p>Göl Malawi ve Tanganyika türleri; canlı renkler, daha sert su ve tür özel tank gerektirir.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=600&h=400&fit=crop" alt="Freshwater Angelfish" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Freshwater Angelfish</h2>
+                                <p>Cichlid ailesinden zarif formlar; yüksek tank ve uyumlu tank arkadaşları ister.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=600&h=400&fit=crop" alt="Barbs" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Barbs</h2>
+                                <p>Küçük, renkli ve hareketli; tiger barb gibi türler sürü halinde en iyi görünür.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1495020689067-9588527769e0?w=600&h=400&fit=crop" alt="Danios" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Danios / Minnows</h2>
+                                <p>Dayanıklı, aktif sürü balıkları; zebra danio yeni başlayanlar için klasik bir seçimdir.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=600&h=400&fit=crop" alt="Rainbowfish" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Rainbowfish</h2>
+                                <p>İridyum renkleriyle ünlü; orta ila büyük topluluk tanklarında göz alıcı sürüler oluşturur.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1526481280695-3c469c2f56b4?w=600&h=400&fit=crop" alt="Rasboras" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Rasboras</h2>
+                                <p>Küçük, barışçıl sürü balıkları; harlequin rasbora bitkili tanklarda mükemmel uyum sağlar.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1583212292453-7c4b3f7e4c8a?w=600&h=400&fit=crop" alt="Plecostomus" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Plecostomus</h2>
+                                <p>Yapışkan ağızlı dip balıkları; algı kontrolünde yardımcı olur, boyuta göre tank seçin.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1520993266521-4a9c61d6a2c0?w=600&h=400&fit=crop" alt="Beginner fish" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Freshwater Fish for Beginners</h2>
+                                <p>Dayanıklı, barışçıl türlerle akvaryuma güvenle başlayın; parametre toleransı yüksektir.</p>
+                            </div>
+                        </article>
+                    </div>
+                    <p class="catalog-credit">Kategori düzeni esin kaynağı: <a href="https://www.liveaquaria.com/pages/freshwater-fish" target="_blank" rel="noopener noreferrer">LiveAquaria® – Freshwater Fish</a></p>
+                </div>
+            </div>
+
+            <!-- FRESHWATER PLANTS CATALOG (Bitki Koleksiyonu → Learn more) -->
+            <div id="view-plant-catalog" class="view">
+                <div class="catalog-page">
+                    <header class="catalog-header">
+                        <button type="button" class="dutch-back-btn" id="btn-plant-catalog-back"><i class="fas fa-arrow-left"></i> Anasayfa</button>
+                        <p class="catalog-meta">AquAssist · Bitki Koleksiyonu</p>
+                        <h1 class="catalog-title">Freshwater Aquarium Plants</h1>
+                        <p class="catalog-lead">Su kalitesini iyileştirin, doğal güzelliği artırın ve balıklarınıza barınak sağlayın. Ön, orta ve arka plan bitkileriyle derinlik oluşturun.</p>
+                    </header>
+                    <div class="catalog-grid catalog-grid--plants">
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1520993266521-4a9c61d6a2c0?w=600&h=400&fit=crop" alt="Plant packs" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Aquarium Plant Packs</h2>
+                                <p>Uzman seçimi bitki paketleri; Dutch veya Nature tarzı düzeninize uygun setlerle hızlı başlayın.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1416339306562-f3d12fefd8f3?w=600&h=400&fit=crop" alt="Foreground plants" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Foreground Aquarium Plants</h2>
+                                <p>Cryptocoryne, Eleocharis ve carpet türleri; ön planda sık dokulu yeşillik ve derinlik hissi.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1437622368342-7a3d73afe5af?w=600&h=400&fit=crop" alt="Midground plants" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Midground Aquarium Plants</h2>
+                                <p>Anubias, Java fern ve orta boy saplı bitkiler; taş ve kütük üzerinde doğal görünüm.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&h=400&fit=crop" alt="Background plants" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Background Aquarium Plants</h2>
+                                <p>Vallisneria, Hygrophila ve Limnophila; yüksek arka plan perdesi ile tankı çerçeveleyin.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&h=400&fit=crop" alt="Stem plants" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Stem Plants</h2>
+                                <p>Rotala, Ludwigia ve Bacopa; düzenli budama ile renk ve form kontrolü sağlar.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-card">
+                            <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&h=400&fit=crop" alt="Floating plants" loading="lazy" />
+                            <div class="catalog-card-body">
+                                <h2>Floating Plants</h2>
+                                <p>Salvinia, duckweed ve red root floater; üstten gölge ve besin emilimi sunar.</p>
+                            </div>
+                        </article>
+                    </div>
+                    <p class="catalog-credit">Kategori düzeni esin kaynağı: <a href="https://www.liveaquaria.com/pages/freshwater-aquarium-plants" target="_blank" rel="noopener noreferrer">LiveAquaria® – Freshwater Aquarium Plants</a></p>
+                </div>
             </div>
 
             <!-- AQUARIUM LIST (Akvaryumlar sekmesi) -->
@@ -532,6 +749,6 @@
 
 
     </div>
-    <script src="app.js?v=14"></script>
+    <script src="app.js?v=17"></script>
 </body>
 </html>

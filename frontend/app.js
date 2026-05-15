@@ -82,13 +82,17 @@ document.addEventListener('DOMContentLoaded', () => {
     showView('home');              // landing: hero + tiles only
 
     document.getElementById('btn-brand-home')?.addEventListener('click', () => showView('home'));
-    document.getElementById('btn-tile-collections')?.addEventListener('click', () => showView('aquariums'));
+    document.getElementById('btn-tile-collections')?.addEventListener('click', () => showView('dutch-aquascape'));
+    document.getElementById('btn-tile-fish')?.addEventListener('click', () => showView('fish-catalog'));
+    document.getElementById('btn-tile-plants')?.addEventListener('click', () => showView('plant-catalog'));
+    document.getElementById('btn-dutch-back')?.addEventListener('click', () => showView('home'));
+    document.getElementById('btn-fish-catalog-back')?.addEventListener('click', () => showView('home'));
+    document.getElementById('btn-plant-catalog-back')?.addEventListener('click', () => showView('home'));
 
-    // Wire chat button
-    document.getElementById('chat-toggle-btn').addEventListener('click', () => {
-        document.getElementById('chat-widget').classList.toggle('hidden');
+    document.getElementById('chat-toggle-btn')?.addEventListener('click', () => {
+        document.getElementById('chat-widget')?.classList.toggle('hidden');
     });
-    document.getElementById('chat-send-btn').addEventListener('click', handleChatSend);
+    document.getElementById('chat-send-btn')?.addEventListener('click', handleChatSend);
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -110,7 +114,6 @@ function showView(name) {
     // 2. Show the target panel
     const target = document.getElementById('view-' + name);
     if (target) {
-        // Tasarım stüdyosu flex kolonu doldurabilsin; diğer görünümler blok kalsın.
         target.style.display = name === 'design' ? 'flex' : 'block';
         target.classList.add('active');
     } else {
@@ -118,7 +121,16 @@ function showView(name) {
         return;
     }
 
-    // 3. Highlight sidebar button
+    // 3. Ana içerik düzeni (design/dutch özel; diğer sekmeler normal)
+    const main = document.querySelector('.main-content');
+    if (main) {
+        main.classList.remove('main-content--design', 'main-content--dutch', 'main-content--catalog');
+        if (name === 'design') main.classList.add('main-content--design');
+        if (name === 'dutch-aquascape') main.classList.add('main-content--dutch');
+        if (name === 'fish-catalog' || name === 'plant-catalog') main.classList.add('main-content--catalog');
+    }
+
+    // 4. Highlight nav
     document.querySelectorAll('.cat-link[data-view]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.view === name);
     });
